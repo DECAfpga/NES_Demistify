@@ -111,6 +111,9 @@ architecture rtl of chameleon64v2_top is
    constant reset_cycles : integer := 131071;
 	
 -- System clocks
+	signal clk_100 : std_logic;
+	signal clk_50 : std_logic;
+	signal pll_locked : std_logic;
 
 	signal ena_1mhz : std_logic;
 	signal ena_1khz : std_logic;
@@ -179,7 +182,6 @@ architecture rtl of chameleon64v2_top is
 -- IO	
 	signal power_button : std_logic;
 	signal play_button : std_logic;
-	signal runstop : std_logic;
 	signal c64_keys : unsigned(63 downto 0);
 	signal c64_restore_key_n : std_logic;
 	signal c64_nmi_n : std_logic;
@@ -250,6 +252,18 @@ architecture rtl of chameleon64v2_top is
 	signal vol_down : std_logic;
 	signal cdtv_port : std_logic;
 
+	signal keys_safe : std_logic;
+	signal c64_menu : std_logic;
+	signal gp1_run : std_logic;
+	signal gp1_select :std_logic;
+	signal gp2_run : std_logic;
+	signal gp2_select : std_logic;
+	
+	signal porta_start : std_logic;
+	signal porta_select : std_logic;
+	signal portb_start : std_logic;
+	signal portb_select : std_logic;
+	
 begin
 
 -- -----------------------------------------------------------------------
@@ -270,23 +284,32 @@ begin
 	clock_iow <='1';
 	irq_out <= not docking_irq;
 
+	
+	clocks: entity work.hostclocks
+	port map
+	(
+		inclk0 => clk50m,
+		c0 => clk_100,
+		c1 => clk_50,
+		locked => pll_locked	
+	);
 
 -- -----------------------------------------------------------------------
 -- 1 Mhz and 1 Khz clocks
 -- -----------------------------------------------------------------------
 	my1Mhz : entity work.chameleon_1mhz
 		generic map (
-			clk_ticks_per_usec => 50
+			clk_ticks_per_usec => 100
 		)
 		port map (
-			clk => clk50m,
+			clk => clk_100,
 			ena_1mhz => ena_1mhz,
 			ena_1mhz_2 => open
 		);
 
 	my1Khz : entity work.chameleon_1khz
 		port map (
-			clk => clk50m,
+			clk => clk_100,
 			ena_1mhz => ena_1mhz,
 			ena_1khz => ena_1khz
 		);
@@ -296,7 +319,7 @@ begin
 -- -----------------------------------------------------------------------
 	io_ps2iec_inst : entity work.chameleon2_io_ps2iec
 		port map (
-			clk => clk50m,
+			clk => clk_100,
 
 			ps2iec_sel => ps2iec_sel,
 			ps2iec => ps2iec,
@@ -317,7 +340,7 @@ begin
 -- -----------------------------------------------------------------------
 	io_shiftreg_inst : entity work.chameleon2_io_shiftreg
 		port map (
-			clk => clk50m,
+			clk => clk_100,
 
 			ser_out_clk => ser_out_clk,
 			ser_out_dat => ser_out_dat,
@@ -335,7 +358,7 @@ begin
 
 	cdtv : entity work.chameleon_cdtv_remote
 	port map(
-		clk => clk50m,
+		clk => clk_100,
 		ena_1mhz => ena_1mhz,
 		ir => ir,
 		key_power => power_button,
@@ -361,7 +384,7 @@ begin
 				enable_c64_4player => true
 			)
 			port map (
-				clk => clk50m,
+				clk => clk_100,
 				ena_1mhz => ena_1mhz,
 				phi2_n => phi2_n,
 				dotclock_n => dotclk_n,
@@ -413,40 +436,60 @@ begin
 			);
 	end block;
 
--- Synchronise IR signal
-process (clk50m)
-begin
-	if rising_edge(clk50m) then
-		ir_d<=ir_data;
-		ir<=ir_d;
-	end if;
-end process;
+	-- Synchronise IR signal
+	process (clk_100)
+	begin
+		if rising_edge(clk_100) then
+			ir_d<=ir_data;
+			ir<=ir_d;
+		end if;
+	end process;
 
 
---joy1<=not gp1_run & not gp1_select & (c64_joy1 and cdtv_joy1);
---runstop<='0' when c64_keys(63)='0' and c64_joy1="1111111" else '1';
--- gp1_run<=c64_keys(11) and c64_keys(56) when c64_joy1="111111" else '1';
--- gp1_select<=c64_keys(60) when c64_joy1="111111" else '1';
-joy1<=((not play_button& not vol_up) and (not cdtv_port & not cdtv_port) and ('1'&c64_joy1(6)))
-			& (c64_joy1(5 downto 0) and cdtv_joya);
-joy2<=((not play_button& not vol_up) and (cdtv_port & cdtv_port) and ('1'&c64_joy2(6)))
-			& (c64_joy2(5 downto 0) and cdtv_joyb);
-joy3<="1" & joystick3;
-joy4<="1" & joystick4;
+	--joy1<=not gp1_run & not gp1_select & (c64_joy1 and cdtv_joy1);
+	--runstop<='0' when c64_keys(63)='0' and c64_joy1="1111111" else '1';
+	-- gp1_run<=c64_keys(11) and c64_keys(56) when c64_joy1="111111" else '1';
+	-- gp1_select<=c64_keys(60) when c64_joy1="111111" else '1';
 
+	keys_safe <= '1' when c64_joy1="1111111" else '0';
+
+	-- Update c64 keys only when the joystick isn't active.
+	process (clk_100)
+	begin
+		if rising_edge(clk_100) then
+			if keys_safe='1' then
+				gp1_run <= c64_keys(8); -- Return
+				gp1_select <= c64_keys(38); -- Right shift
+				gp2_run <= c64_keys(63); -- Run/stop
+				gp2_select <= c64_keys(57); -- Left shift;
+				c64_menu <= c64_keys(15); -- Left arrow;
+			end if;
+		end if;
+	end process;
+	
+	porta_start <= cdtv_port or ((not play_button) and gp1_run);
+	porta_select <= (cdtv_port or ((not vol_up) and gp1_select)) and c64_joy1(6);
+
+	portb_start <= (not cdtv_port) or ((not play_button) and gp2_run);
+	portb_select <= ((not cdtv_port) or ((not vol_up) and gp2_select)) and c64_joy2(6);
+
+	joy1<=porta_start & porta_select & (c64_joy1(5 downto 0) and cdtv_joya);
+	joy2<=portb_start & portb_select & (c64_joy2(5 downto 0) and cdtv_joyb);
+	joy3<="1" & joystick3;
+	joy4<="1" & joystick4;
 
 	-- Guest core
 	
 	midi_txd<='1';
 
-hsync_n <= vga_hsync;
-vsync_n <= vga_vsync;
-red <= unsigned(vga_red(7 downto 3));
-grn <= unsigned(vga_green(7 downto 3));
-blu <= unsigned(vga_blue(7 downto 3));
+	hsync_n <= vga_hsync;
+	vsync_n <= vga_vsync;
+	red <= unsigned(vga_red(7 downto 3));
+	grn <= unsigned(vga_green(7 downto 3));
+	blu <= unsigned(vga_blue(7 downto 3));
 
-	
-guest: COMPONENT NES_mist
+
+	guest: COMPONENT NES_mist
 	PORT map
 	(
 		CLOCK_27 => clk50m&clk50m,
@@ -481,18 +524,18 @@ guest: COMPONENT NES_mist
 		VGA_B => vga_blue(7 downto 2),
 		AUDIO_L => sigma_l,
 		AUDIO_R => sigma_r
-);
+	);
 
--- Pass internal signals to external SPI interface
-spi_clk <= spi_clk_int;
+	-- Pass internal signals to external SPI interface
+	spi_clk <= spi_clk_int;
 
-controller : entity work.substitute_mcu
+	controller : entity work.substitute_mcu
 	generic map (
 		sysclk_frequency => 500,
-		debug => true
+		debug => false
 	)
 	port map (
-		clk => clk50m,
+		clk => clk_50,
 		reset_in => reset_btn,
 		reset_out => reset_n,
 
@@ -520,17 +563,17 @@ controller : entity work.substitute_mcu
 
 		-- Joysticks
 		
-		joy1 => std_logic_vector(joy1),
-		joy2 => std_logic_vector(joy2),
+		joy1 => std_logic_vector(joy1(7 downto 6)&joy1(4)&joy1(5)&joy1(3 downto 0)), -- Swap buttons A & B
+		joy2 => std_logic_vector(joy2(7 downto 6)&joy2(4)&joy2(5)&joy2(3 downto 0)), -- Swap buttons A & B
 		joy3 => std_logic_vector(joy3),
 		joy4 => std_logic_vector(joy4),
 
-		menu_button => usart_cts and not power_button,
+		menu_button => c64_menu and usart_cts and not power_button,
 		
 		-- UART
 		rxd => rs232_rxd,
 		txd => rs232_txd
-);
+	);
 	
 end architecture;
 

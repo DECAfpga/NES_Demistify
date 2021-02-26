@@ -148,7 +148,6 @@ architecture rtl of chameleon64_top is
 
 	signal no_clock : std_logic;
 	signal docking_station : std_logic;
-	signal runstop : std_logic;
 	signal c64_keys : unsigned(63 downto 0);
 	signal c64_restore_key_n : std_logic;
 	signal c64_nmi_n : std_logic;
@@ -222,14 +221,25 @@ architecture rtl of chameleon64_top is
 	signal vol_down : std_logic;
 	signal cdtv_port : std_logic;
 
-begin
+	signal keys_safe : std_logic;
+	signal c64_menu : std_logic;
+	signal gp1_run : std_logic;
+	signal gp1_select :std_logic;
+	signal gp2_run : std_logic;
+	signal gp2_select : std_logic;
 
+	signal porta_start : std_logic;
+	signal porta_select : std_logic;
+	signal portb_start : std_logic;
+	signal portb_select : std_logic;
+
+begin
 
 -- -----------------------------------------------------------------------
 -- Clocks and PLL
 -- -----------------------------------------------------------------------
 
-	clocks: entity work.hostclk
+	clocks: entity work.hostclocks
 		port map
 		(
 			inclk0 => clk8,
@@ -387,10 +397,31 @@ begin
 	);
 
 	rtc_cs<='0';
-			
-	runstop<='0' when c64_keys(63)='0' and c64_joy1="1111111" else '1';
-	joy1<="1" & c64_joy1(6) & (c64_joy1(5 downto 0) and cdtv_joya);
-	joy2<="1" & c64_joy2(6) & (c64_joy2(5 downto 0) and cdtv_joyb);
+
+	keys_safe <= '1' when c64_joy1="1111111" else '0';
+
+	-- Update c64 keys only when the joystick isn't active.
+	process (clk_100)
+	begin
+		if rising_edge(clk_100) then
+			if keys_safe='1' then
+				gp1_run <= c64_keys(62); -- Return
+				gp1_select <= c64_keys(11); -- Right shift
+				gp2_run <= c64_keys(0); -- Run/stop
+				gp2_select <= c64_keys(48); -- Left shift;
+				c64_menu <= c64_keys(54); -- Up arrow;
+			end if;
+		end if;
+	end process;
+	
+	porta_start <= cdtv_port or ((not play_button) and gp1_run);
+	porta_select <= (cdtv_port or ((not vol_up) and gp1_select)) and c64_joy1(6);
+
+	portb_start <= (not cdtv_port) or ((not play_button) and gp2_run);
+	portb_select <= ((not cdtv_port) or ((not vol_up) and gp2_select)) and c64_joy2(6);
+
+	joy1<=porta_start & porta_select & (c64_joy1(5 downto 0) and cdtv_joya);
+	joy2<=portb_start & portb_select & (c64_joy2(5 downto 0) and cdtv_joyb);
 	joy3<="1" & joystick3;
 	joy4<="1" & joystick4;
 
@@ -454,10 +485,10 @@ begin
 --	end process;
 
 
--- Pass internal signals to external SPI interface
-spi_clk <= spi_clk_int;
+	-- Pass internal signals to external SPI interface
+	spi_clk <= spi_clk_int;
 
-controller : entity work.substitute_mcu
+	controller : entity work.substitute_mcu
 	generic map (
 		sysclk_frequency => 500,
 		debug => false
@@ -491,16 +522,16 @@ controller : entity work.substitute_mcu
 
 		-- Joysticks
 		
-		joy1 => std_logic_vector(joy1),
-		joy2 => std_logic_vector(joy2),
+		joy1 => std_logic_vector(joy1(7 downto 6)&joy1(4)&joy1(5)&joy1(3 downto 0)), -- Swap buttons A & B
+		joy2 => std_logic_vector(joy2(7 downto 6)&joy2(4)&joy2(5)&joy2(3 downto 0)), -- Swap buttons A & B
 		joy3 => std_logic_vector(joy3),
 		joy4 => std_logic_vector(joy4),
 
-		menu_button => usart_cts,
+		menu_button => usart_cts and not power_button,
 
 		-- UART
 		rxd => rs232_rxd,
 		txd => rs232_txd
-);
+	);
 
 end architecture;
