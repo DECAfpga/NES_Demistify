@@ -23,5 +23,5 @@ unsigned char joy_keymap[]=
 };
 
 /* Initial ROM */
-const char *bootrom_name="SUPPORT NES";
+const char *bootrom_name="AUTOBOOTNES";
 
