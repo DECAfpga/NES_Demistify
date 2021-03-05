@@ -1,3 +1,6 @@
+# Decouple asynchronous clocks
+
+set_clock_groups -asynchronous -group [get_clocks {spiclk}] -group [get_clocks {guest|clock_21mhz|altpll_component|auto_generated|pll1|clk[*]}]
 
 # Input delays
 
@@ -5,7 +8,6 @@ set_input_delay -clock [get_clocks {guest|clock_21mhz|altpll_component|auto_gene
 set_input_delay -clock [get_clocks {guest|clock_21mhz|altpll_component|auto_generated|pll1|clk[0]}] -reference_pin [get_ports ${RAM_CLK}] -min 3.2 [get_ports ${RAM_IN}]
 
 # Output delays
-
 
 set_output_delay -clock [get_clocks {guest|clock_21mhz|altpll_component|auto_generated|pll1|clk[0]}] -reference_pin [get_ports ${RAM_CLK}] -max 1.5 [get_ports ${RAM_OUT}]
 set_output_delay -clock [get_clocks {guest|clock_21mhz|altpll_component|auto_generated|pll1|clk[0]}] -reference_pin [get_ports ${RAM_CLK}] -min -0.8 [get_ports ${RAM_OUT}]
