@@ -1,6 +1,7 @@
 # nes
-This is a port of Luddes NES core to the MIST and Turbo Chameleon 64. See his FPGANES blog at http://fpganes.blogspot.de for details. The original source code can be found at https://github.com/strigeus/fpganes.
-Many changes ported from https://github.com/MiSTer-devel/NES_MiSTer.
+This is a port of Luddes NES core to the MIST and Turbo Chameleon 64. See his FPGANES blog at http://fpganes.blogspot.de for details. The original source code can be found at https://github.com/strigeus/fpganes
+Many changes ported from https://github.com/MiSTer-devel/NES_MiSTer
+The MiST version can be found at https://github.com/mist-devel/nes
 
 The Turbo Chameleon 64 port wraps the MiST core in a compatibility layer (DeMiSTify, by Alastair M. Robinson), and makes no material changes to the core itself.
 
