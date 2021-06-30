@@ -509,6 +509,7 @@ begin
 		spi_ss3 => spi_ss3,
 		spi_ss4 => spi_ss4,
 		conf_data0 => conf_data0,
+		spi_ack => spi_ack,
 		
 		-- PS/2 signals
 		ps2k_clk_in => ps2_keyboard_clk_in,
@@ -522,12 +523,17 @@ begin
 
 		-- Joysticks
 		
-		joy1 => std_logic_vector(joy1(7 downto 6)&joy1(4)&joy1(5)&joy1(3 downto 0)), -- Swap buttons A & B
-		joy2 => std_logic_vector(joy2(7 downto 6)&joy2(4)&joy2(5)&joy2(3 downto 0)), -- Swap buttons A & B
+		-- Core expects buttons in the order START, C, B, A.
+		-- B & C are the most important buttons, so we map them to
+		-- buttons 1 and 2, respectively, with button 3 -> A and 4 -> start.
+		-- We remap them to START, A, A, B, C, so remap here
+
+		joy1 => std_logic_vector(joy1(7)&joy1(5)&joy1(4)&joy1(6)&joy1(3 downto 0)),
+		joy2 => std_logic_vector(joy2(7)&joy2(5)&joy2(4)&joy2(6)&joy2(3 downto 0)),
 		joy3 => std_logic_vector(joy3),
 		joy4 => std_logic_vector(joy4),
 
-		menu_button => usart_cts and not power_button,
+		buttons => (0=>usart_cts and not power_button,others=>'0'),
 
 		-- UART
 		rxd => rs232_rxd,

@@ -19,3 +19,4 @@ set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) src/mappers
 set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) src/mappers/iir_filter.v ]
 set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) src/T65/T65.qip ]
 set_global_assignment -name SDC_FILE [file join $::quartus(qip_path) constraints.sdc]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) demistify_config_pkg.vhd ]
