@@ -1,6 +1,5 @@
 DEMISTIFYPATH=DeMiSTify
-SUBMODULES=$(DEMISTIFYPATH)/EightThirtyTwo/Makefile
-PROJECTPATH=./
+SUBMODULES=$(DEMISTIFYPATH)/EightThirtyTwo/lib832/lib832.a
 PROJECT=nes
 PROJECTPATH=./
 PROJECTTOROOT=../
@@ -8,9 +7,9 @@ BOARD=
 ROMSIZE1=8192
 ROMSIZE2=4096
 
-all: $(DEMISTIFYPATH)/site.mk firmware init compile tns mist
+all: $(DEMISTIFYPATH)/site.mk $(SUBMODULES) firmware init compile tns mist
 
-$(DEMISTIFYPATH)/site.mk: $(SUBMODULES)
+$(DEMISTIFYPATH)/site.mk:
 	$(info ******************************************************)
 	$(info Please copy the example DeMiSTify/site.template file to)
 	$(info DeMiSTify/site.mk and edit the paths for the version(s))
@@ -20,13 +19,19 @@ $(DEMISTIFYPATH)/site.mk: $(SUBMODULES)
 
 include $(DEMISTIFYPATH)/site.mk
 
-$(SUBMODULES): $(DEMISTIFYPATH)/EightThirtyTwo/lib832/lib832.a
+$(DEMISTIFYPATH)/EightThirtyTwo/Makefile:
 	git submodule update --init --recursive
+
+$(SUBMODULES): $(DEMISTIFYPATH)/EightThirtyTwo/Makefile
 	make -C $(DEMISTIFYPATH) -f bootstrap.mk
 
 .PHONY: firmware
 firmware: $(SUBMODULES)
 	make -C firmware -f ../$(DEMISTIFYPATH)/firmware/Makefile DEMISTIFYPATH=../$(DEMISTIFYPATH) ROMSIZE1=$(ROMSIZE1) ROMSIZE2=$(ROMSIZE2)
+
+.PHONY: firmware_clean
+firmware_clean: $(SUBMODULES)
+	make -C firmware -f ../$(DEMISTIFYPATH)/firmware/Makefile DEMISTIFYPATH=../$(DEMISTIFYPATH) ROMSIZE1=$(ROMSIZE1) ROMSIZE2=$(ROMSIZE2) clean
 
 .PHONY: init
 init:
@@ -49,5 +54,5 @@ tns:
 
 .PHONY: mist
 mist:
-	$(Q13)/quartus_sh --flow compile nes.qpf
+	$(Q13)/quartus_sh --flow compile mist/$(PROJECT)_mist.qpf
 

@@ -2,7 +2,7 @@ set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) mist/mist-m
 set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) mist/NES_mist.sv ]
 set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) mist/ps2_intf.v ] 
 set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) mist/keyboard.v ]
-set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) mist/sigma_delta_dac.v ]
+set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) src/hybrid_pwm_sd_2ndorder.v ]
 set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) mist/sdram.v ]
 set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) src/GameLoader.sv ]
 set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) src/nes.v ]

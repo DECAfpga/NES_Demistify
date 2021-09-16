@@ -1,8 +1,10 @@
-# Decouple asynchronous clocks
+# Define PLL-generated clocks
 
 set sdram_clk "${topmodule}clock_21mhz|altpll_component|auto_generated|pll1|clk[2]"
 set sys_clk   "${topmodule}clock_21mhz|altpll_component|auto_generated|pll1|clk[1]"
 set mem_clk   "${topmodule}clock_21mhz|altpll_component|auto_generated|pll1|clk[0]"
+
+# Decouple asynchronous clocks
 
 set_clock_groups -asynchronous -group [get_clocks {spiclk}] -group [get_clocks $sys_clk]
 

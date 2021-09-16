@@ -422,12 +422,21 @@ mist_video #(.COLOR_DEPTH(5), .OSD_COLOR(3'd5), .SD_HCNT_WIDTH(10)) mist_video (
 assign AUDIO_R = audio;
 assign AUDIO_L = audio;
 wire audio;
-sigma_delta_dac sigma_delta_dac (
-	.DACout(audio),
-	.DACin(sample[15:8]),
-	.CLK(clk),
-	.RESET(reset_nes)
+
+hybrid_pwm_sd_2ndorder
+(
+	.clk(clk),
+	.reset_n(!reset_nes),
+	.d_l(sample),
+	.q_l(audio)
 );
+
+//sigma_delta_dac sigma_delta_dac (
+//	.DACout(audio),
+//	.DACin(sample[15:8]),
+//	.CLK(clk),
+//	.RESET(reset_nes)
+//);
 
 wire [7:0] kbd_joy0;
 wire [7:0] kbd_joy1;

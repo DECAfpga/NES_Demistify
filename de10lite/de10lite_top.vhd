@@ -257,7 +257,8 @@ controller : entity work.substitute_mcu
 	generic map (
 		sysclk_frequency => 500,
 		SPI_FASTBIT=>3,
-		debug => true
+		debug => true,
+		jtag_uart => true
 	)
 	port map (
 		clk => MAX10_CLK1_50,
