@@ -29,9 +29,14 @@ module NES_mist(
   output           SDRAM_CKE, // SDRAM Clock Enable                                                                                                             
 
   // audio
+`ifdef DEMISTIFY_PARALLEL_AUDIO
+  output [15:0]    DAC_L,
+  output [15:0]    DAC_R,
+`else
   output           AUDIO_L,
   output           AUDIO_R,
- 
+`endif
+
   // SPI
   inout          SPI_DO,
   input          SPI_DI,
@@ -43,7 +48,7 @@ module NES_mist(
 
    // UART
 	input 		  UART_RX,
-	input 		  UART_TX
+	input 		  UART_TX	
 );
 
 `include "build_id.v"
@@ -151,7 +156,7 @@ wire [7:0] nes_joy_B = { joyB[0], joyB[1], joyB[2], joyB[3], joyB[7], joyB[6], j
   wire clk85;
   wire clk;
   clk clock_21mhz(.inclk0(CLOCK_27[0]), .c0(clk85), .c1(clk), .c2(SDRAM_CLK), .locked(clock_locked));
-  assign SDRAM_CLK = clk85;
+//  assign SDRAM_CLK = clk85;
   assign SDRAM_CKE = 1;
 
   // reset after download
@@ -456,6 +461,10 @@ mist_video #(.COLOR_DEPTH(5), .OSD_COLOR(3'd5), .SD_HCNT_WIDTH(10)) mist_video (
 	.VGA_HS      ( VGA_HS     )
 );
 
+`ifdef DEMISTIFY_PARALLEL_AUDIO
+assign DAC_L = {!sample[15],sample[14:0]};
+assign DAC_R = {!sample[15],sample[14:0]};
+`else
 assign AUDIO_R = audio;
 assign AUDIO_L = audio;
 wire audio;
@@ -467,6 +476,7 @@ hybrid_pwm_sd_2ndorder
 	.d_l(sample),
 	.q_l(audio)
 );
+`endif
 
 //sigma_delta_dac sigma_delta_dac (
 //	.DACout(audio),

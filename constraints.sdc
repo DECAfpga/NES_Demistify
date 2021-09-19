@@ -6,7 +6,9 @@ set mem_clk   "${topmodule}clock_21mhz|altpll_component|auto_generated|pll1|clk[
 
 # Decouple asynchronous clocks
 
+set_clock_groups -asynchronous -group [get_clocks ${hostclk}] -group [get_clocks $sys_clk]
 set_clock_groups -asynchronous -group [get_clocks {spiclk}] -group [get_clocks $sys_clk]
+set_clock_groups -asynchronous -group [get_clocks {spiclk}] -group [get_clocks $mem_clk]
 
 # Input delays
 

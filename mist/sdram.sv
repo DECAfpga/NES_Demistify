@@ -170,6 +170,7 @@ always @(posedge clk) begin
 	sd_data <= SDRAM_DQ;
 	SDRAM_DQ <= 16'bZZZZZZZZZZZZZZZZ;
 	{ SDRAM_DQMH, SDRAM_DQML } <= 2'b11;
+	SDRAM_A[12:11] <= 2'b11; // Accommodate MiSTer-style SDRAM with merged DQMs
 	sd_cmd <= CMD_NOP;  // default: idle
 	refresh_cnt <= refresh_cnt + 1'd1;
 
@@ -243,7 +244,7 @@ always @(posedge clk) begin
 			sd_cmd <= we_latch?CMD_WRITE:CMD_READ;
 			{ SDRAM_DQMH, SDRAM_DQML } <= ~ds;
 			if (we_latch) SDRAM_DQ <= din_latch;
-			SDRAM_A <= { 4'b0010, addr_latch[9:1] };  // auto precharge
+			SDRAM_A <= { ~ds,2'b10, addr_latch[9:1] };  // Accommodate MiSTer-style SDRAM with merged DQMs, auto precharge
 			SDRAM_BA <= addr_latch[24:23];
 		end
 
