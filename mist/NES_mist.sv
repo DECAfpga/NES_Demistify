@@ -15,27 +15,26 @@ module NES_mist(
   output [ 5:0]  VGA_G, // VGA Green[5:0]
   output [ 5:0]  VGA_B, // VGA Blue[5:0]
   
-  // SDRAM                                                                                                                                                         
-  inout [ 16-1:0]  SDRAM_DQ, // SDRAM Data bus 16 Bits                                                                                                        
-  output [ 13-1:0] SDRAM_A, // SDRAM Address bus 13 Bits                                                                                                      
-  output           SDRAM_DQML, // SDRAM Low-byte Data Mask                                                                                                    
-  output           SDRAM_DQMH, // SDRAM High-byte Data Mask                                                                                                   
-  output           SDRAM_nWE, // SDRAM Write Enable                                                                                                           
-  output           SDRAM_nCAS, // SDRAM Column Address Strobe                                                                                                 
-  output           SDRAM_nRAS, // SDRAM Row Address Strobe                                                                                                    
-  output           SDRAM_nCS, // SDRAM Chip Select                                                                                                            
-  output [ 2-1:0]  SDRAM_BA, // SDRAM Bank Address                                                                                                            
-  output           SDRAM_CLK, // SDRAM Clock                                                                                                                  
-  output           SDRAM_CKE, // SDRAM Clock Enable                                                                                                             
+  // SDRAM
+  inout [ 16-1:0]  SDRAM_DQ, // SDRAM Data bus 16 Bits
+  output [ 13-1:0] SDRAM_A, // SDRAM Address bus 13 Bits
+  output           SDRAM_DQML, // SDRAM Low-byte Data Mask
+  output           SDRAM_DQMH, // SDRAM High-byte Data Mask
+  output           SDRAM_nWE, // SDRAM Write Enable
+  output           SDRAM_nCAS, // SDRAM Column Address Strobe
+  output           SDRAM_nRAS, // SDRAM Row Address Strobe
+  output           SDRAM_nCS, // SDRAM Chip Select
+  output [ 2-1:0]  SDRAM_BA, // SDRAM Bank Address
+  output           SDRAM_CLK, // SDRAM Clock
+  output           SDRAM_CKE, // SDRAM Clock Enable
 
   // audio
 `ifdef DEMISTIFY_PARALLEL_AUDIO
   output [15:0]    DAC_L,
   output [15:0]    DAC_R,
-`else
+`endif
   output           AUDIO_L,
   output           AUDIO_R,
-`endif
 
   // SPI
   inout          SPI_DO,
@@ -464,7 +463,8 @@ mist_video #(.COLOR_DEPTH(5), .OSD_COLOR(3'd5), .SD_HCNT_WIDTH(10)) mist_video (
 `ifdef DEMISTIFY_PARALLEL_AUDIO
 assign DAC_L = {!sample[15],sample[14:0]};
 assign DAC_R = {!sample[15],sample[14:0]};
-`else
+`endif
+
 assign AUDIO_R = audio;
 assign AUDIO_L = audio;
 wire audio;
@@ -476,7 +476,6 @@ hybrid_pwm_sd_2ndorder
 	.d_l(sample),
 	.q_l(audio)
 );
-`endif
 
 //sigma_delta_dac sigma_delta_dac (
 //	.DACout(audio),

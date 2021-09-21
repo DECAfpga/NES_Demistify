@@ -1,0 +1,15 @@
+#! /bin/sh
+
+# 832 CPU Debug script.
+# If you have an FPGA connected via USB Blaster, you can build a
+# DeMiSTified core with debug set to true in the substitute MCU.
+# The firmware will then do nothing until this script connects to it,
+# at which point you can single-step through the firmware,
+# upload modified firmware, set breakpoints, etc.
+
+quartus_stp -t DeMiSTify/EightThirtyTwo/tcl/832bridge.tcl 2>/dev/null >/dev/null &
+while ! netstat -tna | grep 'LISTEN\>' | grep -q ':33581\>'; do
+  sleep 1
+done
+DeMiSTify/EightThirtyTwo/832ocd/832ocd -el -m firmware/controller.map -u firmware/controller.bin
+kill $!

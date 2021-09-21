@@ -54,5 +54,5 @@ tns:
 
 .PHONY: mist
 mist:
-	$(Q13)/quartus_sh --flow compile mist/$(PROJECT)_mist.qpf
+	$(Q13)/quartus_sh --flow compile mist/$(PROJECT).qpf
 
