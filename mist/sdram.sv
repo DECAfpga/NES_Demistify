@@ -181,7 +181,7 @@ always @(posedge clk) begin
 
 			if(reset == 15) begin
 				sd_cmd <= CMD_PRECHARGE;
-				SDRAM_A[10] <= 1'b1;      // precharge all banks
+				SDRAM_A[12:10] <= 3'b001;      // precharge all banks
 			end
 
 			if(reset == 10 || reset == 8) begin
@@ -244,7 +244,8 @@ always @(posedge clk) begin
 			sd_cmd <= we_latch?CMD_WRITE:CMD_READ;
 			{ SDRAM_DQMH, SDRAM_DQML } <= ~ds;
 			if (we_latch) SDRAM_DQ <= din_latch;
-			SDRAM_A <= { ~ds,2'b10, addr_latch[9:1] };  // Accommodate MiSTer-style SDRAM with merged DQMs, auto precharge
+			SDRAM_A <= { 4'b0010, addr_latch[9:1] }; // uto precharge
+			{SDRAM_A[12], SDRAM_A[11]} <= ~ds; // Accommodate MiSTer-style SDRAM with merged DQMs
 			SDRAM_BA <= addr_latch[24:23];
 		end
 
