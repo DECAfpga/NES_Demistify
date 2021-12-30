@@ -256,8 +256,8 @@ sd_clk <= spi_clk_int;
 controller : entity work.substitute_mcu
 	generic map (
 		sysclk_frequency => 500,
-		SPI_FASTBIT=>3,
-		debug => true,
+--		SPI_FASTBIT=>3,
+		debug => false,
 		jtag_uart => true
 	)
 	port map (
