@@ -6,7 +6,7 @@ module video(
 	input [5:0] color,
 	input [8:0] count_h,
 	input [8:0] count_v,
-  input pal_video,
+    input pal_video,
 	input overscan,
 	input palette,
 	
@@ -14,7 +14,9 @@ module video(
 	output reg   sync_v,
 	output [4:0] r,
 	output [4:0] g,
-	output [4:0] b
+	output [4:0] b,
+    output reg	 blank	//added for HDMI DAC (deca)
+
 );
 
 reg vidclk_en;
@@ -77,6 +79,16 @@ always @(posedge clk) begin
 			sync_v <= (v >= (pal_video ? 270 : 243) && (v < ((pal_video ? 270 : 243) + 3)));
 		end
 		if (h == 606) sync_h <= 0;
+	end
+end
+
+//added for extracting blank signal for HDMI output
+always@(posedge clk) begin    
+	// visible area?
+	if((v < 240) && (h < 512)) begin
+		blank <= 1'b0;
+	end else begin
+		blank <= 1'b1;
 	end
 end
 

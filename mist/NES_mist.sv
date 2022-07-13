@@ -15,26 +15,41 @@ module NES_mist(
   output [ 5:0]  VGA_G, // VGA Green[5:0]
   output [ 5:0]  VGA_B, // VGA Blue[5:0]
   
-  // SDRAM
-  inout [ 16-1:0]  SDRAM_DQ, // SDRAM Data bus 16 Bits
-  output [ 13-1:0] SDRAM_A, // SDRAM Address bus 13 Bits
-  output           SDRAM_DQML, // SDRAM Low-byte Data Mask
-  output           SDRAM_DQMH, // SDRAM High-byte Data Mask
-  output           SDRAM_nWE, // SDRAM Write Enable
-  output           SDRAM_nCAS, // SDRAM Column Address Strobe
-  output           SDRAM_nRAS, // SDRAM Row Address Strobe
-  output           SDRAM_nCS, // SDRAM Chip Select
-  output [ 2-1:0]  SDRAM_BA, // SDRAM Bank Address
-  output           SDRAM_CLK, // SDRAM Clock
-  output           SDRAM_CKE, // SDRAM Clock Enable
+`ifdef DEMISTIFY_DECA
+  //added for HDMI DAC (deca)
+  output 		VGA_BLANK,	
+  output		VGA_CLK,	
+  output  [4:0] vga_nes_r,
+  output  [4:0] vga_nes_g,
+  output  [4:0] vga_nes_b,
+  output 		vga_nes_hs,
+  output 		vga_nes_vs,
+`endif
+
+  // SDRAM                                                                                                                                                         
+  inout [ 16-1:0]  SDRAM_DQ, // SDRAM Data bus 16 Bits                                                                                                        
+  output [ 13-1:0] SDRAM_A, // SDRAM Address bus 13 Bits                                                                                                      
+  output           SDRAM_DQML, // SDRAM Low-byte Data Mask                                                                                                    
+  output           SDRAM_DQMH, // SDRAM High-byte Data Mask                                                                                                   
+  output           SDRAM_nWE, // SDRAM Write Enable                                                                                                           
+  output           SDRAM_nCAS, // SDRAM Column Address Strobe                                                                                                 
+  output           SDRAM_nRAS, // SDRAM Row Address Strobe                                                                                                    
+  output           SDRAM_nCS, // SDRAM Chip Select                                                                                                            
+  output [ 2-1:0]  SDRAM_BA, // SDRAM Bank Address                                                                                                            
+  output           SDRAM_CLK, // SDRAM Clock                                                                                                                  
+  output           SDRAM_CKE, // SDRAM Clock Enable                                                                                                             
 
   // audio
 `ifdef DEMISTIFY_PARALLEL_AUDIO
   output [15:0]    DAC_L,
   output [15:0]    DAC_R,
 `endif
+
+`ifdef DEMISTIFY_DECA
+`else
   output           AUDIO_L,
   output           AUDIO_R,
+`endif
 
   // SPI
   inout          SPI_DO,
@@ -154,8 +169,16 @@ wire [7:0] nes_joy_B = { joyB[0], joyB[1], joyB[2], joyB[3], joyB[7], joyB[6], j
   wire clock_locked;
   wire clk85;
   wire clk;
-  clk clock_21mhz(.inclk0(CLOCK_27[0]), .c0(clk85), .c1(clk), .c2(SDRAM_CLK), .locked(clock_locked));
-//  assign SDRAM_CLK = clk85;
+  clk clock_21mhz(
+	  .inclk0(CLOCK_27[0]), 
+	  .c0(clk85), 
+	  .c1(clk), 
+	  .c2(SDRAM_CLK), 
+	  .locked(clock_locked)
+	);
+
+
+//assign SDRAM_CLK = clk85;
   assign SDRAM_CKE = 1;
 
   // reset after download
@@ -417,7 +440,57 @@ video video (
 	.r(nes_r),
 	.g(nes_g),
 	.b(nes_b)
+`ifdef DEMISTIFY_DECA
+			 ,
+	.blank(VGA_BLANK)   //added for HDMI DAC (deca)
+`endif
 );
+
+
+`ifdef DEMISTIFY_DECA
+
+///// added for HDMI DAC (deca)
+parameter OSD_X_OFFSET = 10'd0;
+parameter OSD_Y_OFFSET = 10'd0;
+parameter OSD_COLOR    = 3'd5;
+parameter OSD_AUTO_CE = 1'b1;
+
+wire [5:0] osd_r_o;
+wire [5:0] osd_g_o;
+wire [5:0] osd_b_o;
+wire ce_x1;
+
+osd #(OSD_X_OFFSET, OSD_Y_OFFSET, OSD_COLOR, OSD_AUTO_CE) osd
+(
+	.clk_sys ( clk     ),
+	.rotate  ( 2'b00   ),		// Rotate OSD [0] - rotate [1] - left or right
+	.ce      ( ce_x1   ),		// clk_sys/4
+	.SPI_DI  ( SPI_DI  ),
+	.SPI_SCK ( SPI_SCK ),
+	.SPI_SS3 ( SPI_SS3 ),
+	.R_in    ( {nes_r, nes_r[4]} ),
+	.G_in    ( {nes_g, nes_g[4]} ),
+	.B_in    ( {nes_b, nes_b[4]} ),
+	.HSync   ( nes_hs  ),
+	.VSync   ( nes_vs  ),
+	.R_out   ( osd_r_o ),
+	.G_out   ( osd_g_o ),
+	.B_out   ( osd_b_o )
+);
+
+// assign vga_nes_r = nes_r;  // direct video without OSD
+// assign vga_nes_g = nes_g;
+// assign vga_nes_b = nes_b;
+assign vga_nes_r  = osd_r_o[5:1];
+assign vga_nes_g  = osd_g_o[5:1];
+assign vga_nes_b  = osd_b_o[5:1];
+assign vga_nes_hs = nes_hs;
+assign vga_nes_vs = nes_vs;
+
+assign VGA_CLK = clk;     //added for HDMI DAC (deca)
+///// 
+
+`endif
 
 mist_video #(.COLOR_DEPTH(5), .OSD_COLOR(3'd5), .SD_HCNT_WIDTH(10)) mist_video (
 	.clk_sys     ( clk        ),
@@ -438,7 +511,7 @@ mist_video #(.COLOR_DEPTH(5), .OSD_COLOR(3'd5), .SD_HCNT_WIDTH(10)) mist_video (
 	// disable csync without scandoubler
 	.no_csync    ( no_csync   ),
 	// YPbPr always uses composite sync
-	.ypbpr       ( ypbpr      ),
+//	.ypbpr       ( ypbpr      ),
 	// Rotate OSD [0] - rotate [1] - left or right
 	.rotate      ( 2'b00      ),
 	// composite-like blending
@@ -458,6 +531,10 @@ mist_video #(.COLOR_DEPTH(5), .OSD_COLOR(3'd5), .SD_HCNT_WIDTH(10)) mist_video (
 	.VGA_B       ( VGA_B      ),
 	.VGA_VS      ( VGA_VS     ),
 	.VGA_HS      ( VGA_HS     )
+	`ifdef DEMISTIFY_DECA
+				               ,
+	.ce_x1_o	 ( ce_x1	  )
+    `endif
 );
 
 `ifdef DEMISTIFY_PARALLEL_AUDIO
@@ -465,11 +542,13 @@ assign DAC_L = {!sample[15],sample[14:0]};
 assign DAC_R = {!sample[15],sample[14:0]};
 `endif
 
+`ifdef DEMISTIFY_DECA
+`else
 assign AUDIO_R = audio;
 assign AUDIO_L = audio;
 wire audio;
 
-hybrid_pwm_sd_2ndorder
+hybrid_pwm_sd_2ndorder hybrid_pwm_sd_2ndorder
 (
 	.clk(clk),
 	.reset_n(!reset_nes),
@@ -483,6 +562,7 @@ hybrid_pwm_sd_2ndorder
 //	.CLK(clk),
 //	.RESET(reset_nes)
 //);
+`endif
 
 wire [7:0] kbd_joy0;
 wire [7:0] kbd_joy1;

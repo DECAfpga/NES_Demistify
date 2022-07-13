@@ -1,0 +1,4 @@
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) neptuno_top.vhd]
+set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) clk.qip]
+set_global_assignment -name QIP_FILE [file join $::quartus(qip_path) ../mist/mist-modules/mist.qip ]
+set_global_assignment -name VERILOG_FILE [file join $::quartus(qip_path) sdram.sv ]
