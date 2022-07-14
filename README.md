@@ -36,14 +36,9 @@ Special thanks to Alastair M. Robinson creator of [DeMiSTify](https://github.com
 ```sh
 git clone https://github.com/DECAfpga/NES_Demistify
 cd NES_Demistify
-git submodule update --init --recursive
-
-
 #Do a first make (will finish in error) but it will download missing submodules 
 make
-#Checkout to the DeMiSTify branch with the latest updates
 cd DeMiSTify
-git checkout somhic
 #Create file site.mk in DeMiSTify folder 
 cp site.template site.mk
 #Edit site.mk and add your own PATHs to Quartus (Q19)
